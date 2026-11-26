@@ -1,44 +1,40 @@
 package br.com.contratacaoEstagio.dashboard;
 
-import java.time.LocalDate;
-
 import org.springframework.stereotype.Controller;
 import org.springframework.ui.Model;
 import org.springframework.web.bind.annotation.GetMapping;
-
-import br.com.contratacaoEstagio.aluno.AlunoRepository;
-import br.com.contratacaoEstagio.contrato.ContratoRepository;
-import br.com.contratacaoEstagio.empresa.EmpresaRepository;
+import org.springframework.web.bind.annotation.PostMapping;
+import org.springframework.web.servlet.mvc.support.RedirectAttributes;
 
 @Controller
 public class homeController {
     private static final int DIAS_ALERTA = 30;
-    private final AlunoRepository alunoRepository;
-    private final EmpresaRepository empresaRepository;
-    private final ContratoRepository contratoRepository;
+    private final DashboardRepository dashboardRepository;
 
-    
-
-    public homeController(AlunoRepository alunoRepository, EmpresaRepository empresaRepository,
-            ContratoRepository contratoRepository) {
-        this.alunoRepository = alunoRepository;
-        this.empresaRepository = empresaRepository;
-        this.contratoRepository = contratoRepository;
+    public homeController(DashboardRepository dashboardRepository) {
+        this.dashboardRepository = dashboardRepository;
     }
-
-
 
     @GetMapping("/")
     public String dashboard(Model model) {
-        LocalDate hoje = LocalDate.now();
-        LocalDate limite = hoje.plusDays(DIAS_ALERTA);
+        DashboardResumo resumo = dashboardRepository.buscarResumo(DIAS_ALERTA);
 
-        model.addAttribute("totalAlunos", alunoRepository.count());
-        model.addAttribute("alunosAtivos", alunoRepository.countByativoTrue());
-        model.addAttribute("totalEmpresa", empresaRepository.count());
-        model.addAttribute("empresasAtivas", empresaRepository.countByativoTrue());
-        model.addAttribute("contratosAtivos", contratoRepository.countByativoTrue());
-        model.addAttribute("contratosVencendo", contratoRepository.countByAtivoTrueAndDataTerminoBetween(hoje, limite));
+        model.addAttribute("totalAlunos", resumo.totalAlunos());
+        model.addAttribute("alunosAtivos", resumo.alunosAtivos());
+        model.addAttribute("totalEmpresa", resumo.totalEmpresas());
+        model.addAttribute("empresasAtivas", resumo.empresasAtivas());
+        model.addAttribute("contratosAtivos", resumo.contratosAtivos());
+        model.addAttribute("contratosVencendo", resumo.contratosVencendo());
         return "dashboard";
+    }
+
+    @PostMapping("/dashboard/encerrar-vencidos")
+    public String encerrarVencidos(RedirectAttributes redirect) {
+        int total = dashboardRepository.encerrarContratosVencidos();
+        String mensagem = total == 0
+                ? "Nenhum contrato vencido para encerrar."
+                : total + " contrato(s) vencido(s) encerrado(s).";
+        redirect.addFlashAttribute("mensagem", mensagem);
+        return "redirect:/";
     }
 }
