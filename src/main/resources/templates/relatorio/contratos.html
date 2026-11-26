@@ -1,0 +1,119 @@
+<!DOCTYPE html>
+<html lang="pt-BR" xmlns:th="http://www.thymeleaf.org">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Relatório de Contratos</title>
+
+    <link rel="stylesheet" th:href="@{/css/style.css}">
+    <link rel="stylesheet" th:href="@{/css/contrato.css}">
+</head>
+
+<body>
+    <div id="conteiner">
+
+        <nav class="menu">
+            <div class="img">
+                <img class="logo" th:src="@{/img/logo-cps-2022.svg}" alt="Logo CPS">
+            </div>
+            <div class="titulo">
+                <h1>Relatórios</h1>
+            </div>
+            <ul class="cadastros">
+                <li><a th:href="@{/}">Início</a></li>
+                <li><a th:href="@{/aluno}">Aluno</a></li>
+                <li><a th:href="@{/empresa}">Empresa</a></li>
+                <li><a th:href="@{/contratos}">Contratos</a></li>
+                <li><a th:href="@{/relatorios/contratos}">Relatórios</a></li>
+            </ul>
+        </nav>
+
+        <main class="content">
+            <h1>Relatório de Contratos</h1>
+            <div class="divisao"></div>
+
+            <p>Contratos de estágio com dados do aluno e da empresa, gerados por stored procedure.</p>
+
+            <form th:action="@{/relatorios/contratos}" method="get"
+                style="display: flex; gap: 12px; align-items: flex-end; flex-wrap: wrap; margin-bottom: 16px;">
+
+                <div class="campo">
+                    <label for="situacao">Situação</label>
+                    <select id="situacao" name="situacao">
+                        <option value="" th:selected="${situacaoSelecionada == ''}">Todas</option>
+                        <option value="VIGENTE" th:selected="${situacaoSelecionada == 'VIGENTE'}">Vigente</option>
+                        <option value="VENCENDO" th:selected="${situacaoSelecionada == 'VENCENDO'}">Vencendo em 30 dias</option>
+                        <option value="VENCIDO" th:selected="${situacaoSelecionada == 'VENCIDO'}">Vencido (ainda ativo)</option>
+                        <option value="ENCERRADO" th:selected="${situacaoSelecionada == 'ENCERRADO'}">Encerrado</option>
+                    </select>
+                </div>
+
+                <div class="campo">
+                    <label for="empresaId">Empresa</label>
+                    <select id="empresaId" name="empresaId">
+                        <option value="0">Todas</option>
+                        <option th:each="e : ${empresas}"
+                            th:value="${e.id}"
+                            th:text="${e.razaoSocial}"
+                            th:selected="${e.id == empresaSelecionada}">
+                        </option>
+                    </select>
+                </div>
+
+                <button type="submit" class="botao-cadastro">Filtrar</button>
+
+                <a class="botao-cadastro"
+                    style="text-decoration: none;"
+                    th:href="@{/relatorios/contratos/csv(situacao=${situacaoSelecionada}, empresaId=${empresaSelecionada})}">
+                    Exportar CSV
+                </a>
+            </form>
+
+            <p><strong th:text="${#lists.size(linhas)}">0</strong> contrato(s) encontrado(s).</p>
+
+            <div class="tabela-container">
+                <table class="tabela">
+                    <thead>
+                        <tr>
+                            <th>ID</th>
+                            <th>RA</th>
+                            <th>Aluno</th>
+                            <th>Curso</th>
+                            <th>Empresa</th>
+                            <th>Cargo</th>
+                            <th>Modalidade</th>
+                            <th>Início</th>
+                            <th>Término</th>
+                            <th>Situação</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        <tr th:each="l : ${linhas}">
+                            <td th:text="${l.id}"></td>
+                            <td th:text="${l.ra}"></td>
+                            <td th:text="${l.aluno}"></td>
+                            <td th:text="${l.curso}"></td>
+                            <td th:text="${l.empresa}"></td>
+                            <td th:text="${l.cargo}"></td>
+                            <td th:text="${l.modalidade}"></td>
+                            <td th:text="${#temporals.format(l.dataInicio, 'dd/MM/yyyy')}"></td>
+                            <td th:text="${#temporals.format(l.dataTermino, 'dd/MM/yyyy')}"></td>
+                            <td>
+                                <span class="status"
+                                    th:classappend="${l.situacao == 'VIGENTE' or l.situacao == 'VENCENDO'} ? ' ativo' : ' inativo'"
+                                    th:text="${l.situacao}"></span>
+                            </td>
+                        </tr>
+                        <tr th:if="${#lists.isEmpty(linhas)}">
+                            <td colspan="10">Nenhum contrato encontrado para os filtros selecionados.</td>
+                        </tr>
+                    </tbody>
+                </table>
+            </div>
+        </main>
+
+    </div>
+</body>
+
+</html>
